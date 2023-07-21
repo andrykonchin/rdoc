@@ -225,6 +225,7 @@ class TestRDocGeneratorJsonIndex < RDoc::TestCase
   end
 
   def test_generate_utf_8
+    puts " ==== hello from test_generate_utf_8"
     text = "5\xB0"
     text = RDoc::Encoding.change_encoding text, Encoding::ISO_8859_1
     @klass.add_comment comment(text), @top_level
