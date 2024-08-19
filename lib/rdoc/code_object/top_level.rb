@@ -52,6 +52,9 @@ class RDoc::TopLevel < RDoc::Context
     @classes_or_modules = []
   end
 
+  ##
+  # Sets the parser for this toplevel context, also the store.
+
   def parser=(val)
     @parser = val
     @store.update_parser_of_file(absolute_name, val) if @store
@@ -180,8 +183,8 @@ class RDoc::TopLevel < RDoc::Context
     "#<%s:0x%x %p modules: %p classes: %p>" % [
       self.class, object_id,
       base_name,
-      @modules.map { |n,m| m },
-      @classes.map { |n,c| c }
+      @modules.map { |n, m| m },
+      @classes.map { |n, c| c }
     ]
   end
 
@@ -251,8 +254,8 @@ class RDoc::TopLevel < RDoc::Context
       q.text "base name: #{base_name.inspect}"
       q.breakable
 
-      items = @modules.map { |n,m| m }
-      items.concat @modules.map { |n,c| c }
+      items = @modules.map { |n, m| m }
+      items.concat @modules.map { |n, c| c }
       q.seplist items do |mod| q.pp mod end
     end
   end

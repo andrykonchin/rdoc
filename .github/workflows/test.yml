@@ -9,11 +9,13 @@ jobs:
   ruby-versions:
     uses: ruby/actions/.github/workflows/ruby_versions.yml@master
     with:
-      engine: cruby-jruby
-      versions: '["truffleruby"]'
+      # 2.7 breaks `test_parse_statements_nodoc_identifier_alias_method`
+      min_version: 3.0
+
   test:
     needs: ruby-versions
     strategy:
+      fail-fast: false
       matrix:
         ruby: ${{ fromJson(needs.ruby-versions.outputs.versions) }}
         os: [ubuntu-latest, macos-latest, windows-latest]
@@ -21,17 +23,19 @@ jobs:
           - os: windows-latest
             ruby: truffleruby
           - os: windows-latest
+            ruby: truffleruby-head
+          - os: windows-latest
             ruby: jruby
           - os: windows-latest
             ruby: jruby-head
     runs-on: ${{ matrix.os }}
     steps:
-    - uses: actions/checkout@ac593985615ec2ede58e132d2e21d2b1cbd6127c # v3.3.0
+    - uses: actions/checkout@v4 # v3.3.0
     # libyaml-dev is needed for psych, see https://github.com/ruby/setup-ruby/issues/409
     - if: ${{ matrix.os == 'ubuntu-latest' }}
       run: sudo apt install libyaml-dev
     - name: Set up Ruby
-      uses: ruby/setup-ruby@250fcd6a742febb1123a77a841497ccaa8b9e939 # v1.152.0
+      uses: ruby/setup-ruby@master
       with:
         ruby-version: ${{ matrix.ruby }}
         bundler-cache: true # 'bundle install' and cache
@@ -42,9 +46,24 @@ jobs:
       run: bundle exec rake
       env:
         RUBYOPT: --enable-frozen_string_literal
-      continue-on-error: ${{ matrix.ruby == 'truffleruby-head' }}
+    - name: Run test with Prism parser
+      run: bundle exec rake
+      env:
+        RUBYOPT: --enable-frozen_string_literal
+        RDOC_USE_PRISM_PARSER: true
     - if: ${{ matrix.ruby == 'head' && startsWith(matrix.os, 'ubuntu') }}
       run: bundle exec rake rdoc
-    - if: ${{ matrix.ruby == 'head' && startsWith(matrix.os, 'ubuntu') }}
-      run: bundle exec rake rubocop
-
+  lint:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Set up Ruby
+        uses: ruby/setup-ruby@v1
+        with:
+          ruby-version: "3.3"
+          bundler-cache: true
+      - name: Run rubocop
+        run: bundle exec rubocop
+        # Just to make sure the format_generated_files task is working
+      - name: Sanity check for the format_generated_files task
+        run: bundle exec rake generate format_generated_files

@@ -9,7 +9,7 @@
 # RDoc::Markdown as described by the [markdown syntax][syntax].
 #
 # To choose Markdown as your only default format see
-# RDoc::Options@Saved+Options for instructions on setting up a `.doc_options`
+# RDoc::Options@Saved+Options for instructions on setting up a `.rdoc_options`
 # file to store your project default.
 #
 # ## Usage
@@ -178,7 +178,7 @@
 # [dingus]: http://daringfireball.net/projects/markdown/dingus
 # [GFM]: https://github.github.com/gfm/
 # [pegmarkdown]: https://github.com/jgm/peg-markdown
-# [PHPE]: http://michelf.com/projects/php-markdown/extra/#def-list
+# [PHPE]: https://michelf.ca/projects/php-markdown/extra/#def-list
 # [syntax]: http://daringfireball.net/projects/markdown/syntax
 #--
 # Last updated to jgm/peg-markdown commit 8f8fc22ef0
@@ -530,7 +530,7 @@ AtxInline = !@Newline !(@Sp /#*/ @Sp @Newline) Inline
 AtxStart =  < /\#{1,6}/ >
             { text.length }
 
-AtxHeading = AtxStart:s @Sp AtxInline+:a (@Sp /#*/ @Sp)?  @Newline
+AtxHeading = AtxStart:s @Spacechar+ AtxInline+:a (@Sp /#*/ @Sp)?  @Newline
             { RDoc::Markup::Heading.new(s, a.join) }
 
 SetextHeading = SetextHeading1 | SetextHeading2
@@ -1237,7 +1237,7 @@ DefinitionListItem = ( DefinitionListLabel+ ):label
                        list_items
                      }
 
-DefinitionListLabel = StrChunk:label @Sp @Newline
+DefinitionListLabel = Inline:label @Sp @Newline
                       { label }
 
 DefinitionListDefinition = @NonindentSpace ":" @Space Inlines:a @BlankLine+

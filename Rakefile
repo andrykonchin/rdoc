@@ -24,7 +24,17 @@ RDoc::Task.new do |doc|
   doc.main = 'README.rdoc'
   doc.title = "rdoc #{RDoc::VERSION} Documentation"
   doc.rdoc_dir = '_site' # for github pages
-  doc.rdoc_files = FileList.new %w[lib/**/*.rb *.rdoc doc/rdoc/markup_reference.rb] - PARSER_FILES
+  doc.rdoc_files = FileList.new %w[lib/**/*.rb *.rdoc *.md doc/rdoc/markup_reference.rb] - PARSER_FILES
+end
+
+task "coverage" do
+  cov = []
+  e = IO.popen([FileUtils::RUBY, "-I./lib", "exe/rdoc", "-C"], &:read)
+  e.scan(/^ *# in file (?<loc>.*)\n *(?<code>.*)|^ *(?<code>.*\S) *# in file (?<loc>.*)/) do
+    cov << "%s: %s\n" % $~.values_at(:loc, :code)
+  end
+  cov.sort!
+  puts cov
 end
 
 Rake::TestTask.new(:normal_test) do |t|
@@ -65,7 +75,7 @@ parsed_files = PARSER_FILES.map do |parser_file|
       racc = Gem.bin_path 'racc', 'racc'
       rb_file = parser_file.gsub(/\.ry\z/, ".rb")
       ruby "#{racc} -l -E -o #{rb_file} #{parser_file}"
-      open(rb_file, 'r+') do |f|
+      File.open(rb_file, 'r+') do |f|
         newtext = "# frozen_string_literal: true\n#{f.read}"
         f.rewind
         f.write newtext
@@ -95,8 +105,8 @@ begin
   require 'rubocop/rake_task'
 rescue LoadError
 else
-  RuboCop::RakeTask.new(:rubocop) do |t|
-    t.options = [*parsed_files]
+  RuboCop::RakeTask.new(:format_generated_files) do |t|
+    t.options = parsed_files + ["--config=.generated_files_rubocop.yml"]
   end
-  task :build => [:generate, "rubocop:autocorrect"]
+  task :build => [:generate, "format_generated_files:autocorrect"]
 end
